@@ -83,3 +83,27 @@ int sys_uptime(void)
 	release(&tickslock);
 	return xticks;
 }
+
+int sys_setslice(void)
+{
+	int pid;
+	uint sticks;
+	return setslice(pid, sticks);
+}
+
+int sys_getslice(void)
+{
+	int pid;
+	return getslice(pid);
+}
+
+int sys_fork2(void)
+{
+	return fork2();
+}
+
+int sys_getpinfo(void)
+{
+	struct pstat *p;
+	return getpinfo(p);
+}
