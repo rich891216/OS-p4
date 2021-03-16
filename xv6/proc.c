@@ -16,6 +16,15 @@ struct
 } ptable;
 
 void addToTail(struct proc *p) {
+	if (p == NULL) {
+		acquire(&ptable.lock);
+		ptable->head = p;
+		ptable->tail = p;
+		release(&ptable.lock);
+	} else if (p == head) {
+		struct proc *temp = p;
+		head = head->next;
+	}
 	ptable->tail->next = p;
 	ptable->tail = p;
 }
@@ -159,9 +168,6 @@ void userinit(void)
 	acquire(&ptable.lock);
 
 	p->state = RUNNABLE;
-	p->next = NULL;
-	ptable->head = p;
-	ptable->tail = p;
 
 	release(&ptable.lock);
 }
@@ -657,7 +663,7 @@ int fork2(int slice) {
 
 int getpinfo(struct pstat *ps)
 {
-	if(ps == NULL) {
+	if (ps == NULL) {
 		return -1;
 	}
 	// print example: A: timeslice = 2; compticks = 1; schedticks = 6; sleepticks = 4; switches = 3.
