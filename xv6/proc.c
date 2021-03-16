@@ -215,6 +215,7 @@ int fork(void)
 	np->sz = curproc->sz;
 	np->parent = curproc;
 	*np->tf = *curproc->tf;
+	np->slice = curproc->slice;
 
 	// Clear %eax so that fork returns 0 in the child.
 	np->tf->eax = 0;
@@ -556,4 +557,106 @@ void procdump(void)
 		}
 		cprintf("\n");
 	}
+}
+
+// new system call: setslice(pid, slice)
+// set the process with pid to a CRR time slice > 0
+int setslice(int pid, int slice)
+{
+	struct proc *p;
+	int found = 0;
+
+	if (slice <= 0) {
+		return -1;
+	}
+	acquire(&ptable.lock);
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	{
+		if (p->pid == pid)
+		{
+			found = 1;
+			p->slice = slice;
+			break;
+		}
+	}
+	release(&ptable.lock);
+	
+	if (!found) {
+		return -1;
+	}
+}
+
+// new system call: int getslice(pid)
+// gets the time slice given to process with pid
+int getslice(int pid)
+{
+	struct proc *p;
+
+	acquire(&ptable.lock);
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	{
+		if (p->pid == pid)
+		{
+			return p->slice;
+		}
+	}
+	release(&ptable.lock);
+	return -1;
+}
+
+int fork2(int slice) {
+	int i, pid;
+	struct proc *np;
+	struct proc *curproc = myproc();
+
+	// check if slice is larger than 0
+	if (slice <= 0)
+	{
+		return -1;
+	}
+
+	// Allocate process.
+	if ((np = allocproc()) == 0)
+	{
+		return -1;
+	}
+
+	// Copy process state from proc.
+	if ((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0)
+	{
+		kfree(np->kstack);
+		np->kstack = 0;
+		np->state = UNUSED;
+		return -1;
+	}
+	np->sz = curproc->sz;
+	np->parent = curproc;
+	*np->tf = *curproc->tf;
+	np->slice = slice;
+
+	// Clear %eax so that fork returns 0 in the child.
+	np->tf->eax = 0;
+
+	for (i = 0; i < NOFILE; i++)
+		if (curproc->ofile[i])
+			np->ofile[i] = filedup(curproc->ofile[i]);
+	np->cwd = idup(curproc->cwd);
+
+	safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+
+	pid = np->pid;
+
+	acquire(&ptable.lock);
+
+	np->state = RUNNABLE;
+
+	release(&ptable.lock);
+
+	return pid;
+}
+
+int getpinfo(struct pstat *ps)
+{
+	// cprintf("%d %s %s", ps->pid, state, p->name);
+	return 0;
 }
