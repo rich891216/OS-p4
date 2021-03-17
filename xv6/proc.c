@@ -733,6 +733,7 @@ int getpinfo(struct pstat *ps)
 		ps->schedticks[index] = p->schedticks;
 		ps->sleepticks[index] = p->sleepticks;
 		ps->switches[index] = p->switches;
+		index++;
 	}
 
 	// print example: A: timeslice = 2; compticks = 1; schedticks = 6; sleepticks = 4; switches = 3.
