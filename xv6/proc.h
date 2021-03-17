@@ -50,7 +50,8 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   struct proc *next;	 // Pointer to the next process in list
-  int deadline;		     // deadline wakeup time
+  struct proc *prev;	 // Pointer to prev process in list
+  int deadline;			 // deadline wakeup time
   int slice;             // time slice
   int compticks;        //compensation ticks
 };

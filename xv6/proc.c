@@ -18,15 +18,45 @@ struct
 void addToTail(struct proc *p) {
 	if (p == NULL) {
 		cprintf("addToTail: p is null, cannot add to tail.\n");
-	} else if (p->pid == head->pid) {
-		struct proc *temp = p;
-		head = head->next;
-		p->next = NULL;
-		ptable->tail->next = temp;
-		ptable->tail = temp;
-	} else {
-		ptable->tail->next = p;
+	} else if (ptable->head == NULL) {
+		ptable->head = p;
 		ptable->tail = p;
+	}
+	else {
+		struct proc *temp = head;
+		while (temp != NULL) {
+			if (temp->pid == p->pid) {
+				temp->prev->next = temp->next;
+				temp->next->prev = temp->prev;
+				ptable->tail->next = temp;
+				temp->prev = ptable->tail;
+				ptable->tail = temp;
+				return;
+			}
+			temp = temp->next;
+		}
+		ptable->tail->next = p;
+		tail->prev = ptable->tail;
+		ptable->tail = p;
+	}
+}
+
+void deleteFromList(struct proc *p) {
+	if (p == NULL) {
+		cprintf("deleteFromList: p is null, cannot delete.\n");
+	} else if (ptable->head == NULL) {
+		cprintf("deleteFromList: list is null, cannot delete.\n");
+	} else {
+		struct proc *temp = head;
+			while (temp != NULL) {
+				if (temp->pid == p->pid) {
+					temp->prev->next = temp->next;
+					temp->next->prev = temp->prev;
+					temp = NULL;
+					return;
+				}
+				temp = temp->next;
+		}
 	}
 }
 
@@ -290,6 +320,7 @@ void exit(void)
 
 	// Jump into the scheduler, never to return.
 	curproc->state = ZOMBIE;
+	deleteFromList(curproc);
 	sched();
 	panic("zombie exit");
 }
@@ -432,6 +463,7 @@ void yield(void)
 {
 	acquire(&ptable.lock); //DOC: yieldlock
 	myproc()->state = RUNNABLE;
+	addToTail(myproc);
 	sched();
 	release(&ptable.lock);
 }
@@ -508,10 +540,10 @@ wakeup1(void *chan)
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		if (p->state == SLEEPING && p->chan == chan && p->chan >= *chan) {
 			p->state = RUNNABLE;
+			addToTail(p);
 		} else if (p->state == SLEEPING) {
-			// compensate
+			p->compticks++;
 		}
-
 }
 
 // Wake up all processes sleeping on chan.
