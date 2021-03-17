@@ -50,9 +50,14 @@ trap(struct trapframe *tf)
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
       acquire(&tickslock);
-      ticks++;
+      ticks0 = ticks;
+      // tick for given slice
+      while (ticks - ticks0 < myproc()->slice + myproc()->compticks) {
+        ticks++;
+      }
       wakeup(&ticks);
       release(&tickslock);
+      myproc->compticks = 0;
     }
     lapiceoi();
     break;
