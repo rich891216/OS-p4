@@ -17,11 +17,13 @@ int main(int argc, char *argv[]) {
     if(childA == 0) {
         char *args[] = {"./loop", sleepA, NULL};
         // exec
+        execv("./loop", args);
     } else {
         int childB = fork2(sliceB);
         if(childB == 0) {
             char *args[] = {"./loop", sleepA, NULL};
             // exec
+            execv("./loop", args);
         } else {
             // parent
             sleep(sleepParent);
