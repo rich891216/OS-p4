@@ -391,25 +391,30 @@ void scheduler(void)
 		// Enable interrupts on this processor.
 		sti();
 
-		// Loop over process table looking for process to run.
+		
 		acquire(&ptable.lock);
 		p = head;
 		if (p->state != RUNNABLE) {
 			addToTail(p);
 		} else {
 			// switch to running p
+			int slice = p->slice + p->compticks;
+			int curticks = 0;
 			c->proc = p;
 			switchuvm(p);
 			p->state = RUNNING;
 			addToTail(p);
-
 			swtch(&(c->scheduler), p->context);
+			while (curticks < slice) {
+				curticks++;
+			}
 			switchkvm();
 			c->proc = 0;
+			p->compticks = 0;
 		}
 
 		
-
+		// Loop over process table looking for process to run.
 		// for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		// {
 		// 	if (p->state != RUNNABLE)
