@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     // sleep for <sleepticks> seconds
-    
+    sleep(sleepticks);
     int i = 0, j = 0;
     while (i < 800000000) {
         j += i * j + 1;
