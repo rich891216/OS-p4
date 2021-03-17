@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "pstat.h"
 
 struct
 {
@@ -56,7 +57,7 @@ void deleteFromList(struct proc *p) {
 					return;
 				}
 				temp = temp->next;
-		}
+			}
 	}
 }
 
@@ -721,12 +722,25 @@ int getpinfo(struct pstat *ps)
 	if (ps == NULL) {
 		return -1;
 	}
+
+	int index = 0;
+	struct proc *p;
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+		ps->inuse[index] = 1;
+		ps->pid[index] = p->pid;
+		ps->timeslice[index] = p->slice;
+		ps->compticks[index] = p->compticks;
+		ps->schedticks[index] = p->schedticks;
+		ps->sleepticks[index] = p->sleepticks;
+		ps->switches[index] = p->switches;
+	}
+
 	// print example: A: timeslice = 2; compticks = 1; schedticks = 6; sleepticks = 4; switches = 3.
 	// cprintf("%d %s %s", ps->pid, state, p->name);
-	int size = sizeof(ps->pid) / sizeof(ps->pid[0]);
-	for (int i = 0; i < size; i++) {
-		cprintf("%d: timeslice = %d; compticks = %d; schedticks = %d; sleepticks = %d; switches = %d.\n",
-		ps->pid, ps->timeslice[i], ps->compticks[i], ps->schedticks[i], ps->sleepticks[i], ps->switches[i]);
-	}
-	return 0;
+	//int size = sizeof(ps->pid) / sizeof(ps->pid[0]);
+	//for (int i = 0; i < size; i++) {
+	//	cprintf("%d: timeslice = %d; compticks = %d; schedticks = %d; sleepticks = %d; switches = %d.\n",
+	//	ps->pid, ps->timeslice[i], ps->compticks[i], ps->schedticks[i], ps->sleepticks[i], ps->switches[i]);
+	//}
+	//return 0;
 }

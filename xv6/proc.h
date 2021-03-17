@@ -53,7 +53,10 @@ struct proc {
   struct proc *prev;	 // Pointer to prev process in list
   int deadline;			 // deadline wakeup time
   int slice;             // time slice
-  int compticks;        //compensation ticks
+  int compticks;         // compensation ticks
+  int schedticks;		 // scheduled ticks
+  int sleepticks;		 // sleep ticks
+  int switches;			 // number of switches
 };
 
 // Process memory is laid out contiguously, low addresses first:
