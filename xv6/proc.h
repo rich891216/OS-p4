@@ -52,6 +52,7 @@ struct proc {
   struct proc *next;	 // Pointer to the next process in list
   int deadline;		     // deadline wakeup time
   int slice;             // time slice
+  int compticks;        //compensation ticks
 };
 
 // Process memory is laid out contiguously, low addresses first:

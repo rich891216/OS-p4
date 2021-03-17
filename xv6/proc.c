@@ -17,16 +17,17 @@ struct
 
 void addToTail(struct proc *p) {
 	if (p == NULL) {
-		acquire(&ptable.lock);
-		ptable->head = p;
-		ptable->tail = p;
-		release(&ptable.lock);
-	} else if (p == head) {
+		cprintf("addToTail: p is null, cannot add to tail.\n");
+	} else if (p->pid == head->pid) {
 		struct proc *temp = p;
 		head = head->next;
+		p->next = NULL;
+		ptable->tail->next = temp;
+		ptable->tail = temp;
+	} else {
+		ptable->tail->next = p;
+		ptable->tail = p;
 	}
-	ptable->tail->next = p;
-	ptable->tail = p;
 }
 
 static struct proc *initproc;
@@ -361,25 +362,42 @@ void scheduler(void)
 
 		// Loop over process table looking for process to run.
 		acquire(&ptable.lock);
-		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		{
-			if (p->state != RUNNABLE)
-				continue;
-
-			// Switch to chosen process.  It is the process's job
-			// to release ptable.lock and then reacquire it
-			// before jumping back to us.
+		p = head;
+		if (p->state != RUNNABLE) {
+			addToTail(p);
+		} else {
+			// switch to running p
 			c->proc = p;
 			switchuvm(p);
 			p->state = RUNNING;
+			addToTail(p);
 
 			swtch(&(c->scheduler), p->context);
 			switchkvm();
-
-			// Process is done running for now.
-			// It should have changed its p->state before coming back.
 			c->proc = 0;
 		}
+
+		
+
+		// for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+		// {
+		// 	if (p->state != RUNNABLE)
+		// 		continue;
+
+		// 	// Switch to chosen process.  It is the process's job
+		// 	// to release ptable.lock and then reacquire it
+		// 	// before jumping back to us.
+		// 	c->proc = p;
+		// 	switchuvm(p);
+		// 	p->state = RUNNING;
+
+		// 	swtch(&(c->scheduler), p->context);
+		// 	switchkvm();
+
+		// 	// Process is done running for now.
+		// 	// It should have changed its p->state before coming back.
+		// 	c->proc = 0;
+		// }
 		release(&ptable.lock);
 	}
 }

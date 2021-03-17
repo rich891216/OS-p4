@@ -62,7 +62,7 @@ int sys_sleep(void)
 	ticks0 = ticks;
 
 	p->deadline = ticks0 + n;
-	p->slice += n;
+	p->compticks = n;
 	if (myproc()->killed)
 	{
 		release(&tickslock);
