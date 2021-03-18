@@ -88,23 +88,39 @@ int sys_uptime(void)
 int sys_setslice(void)
 {
 	int pid;
-	uint sticks;
-	return setslice(pid, sticks);
+	int sticks;
+	if (argint(0, &pid) < 0) {
+		return -1;
+	}
+	if (argint(0, &sticks) < 0) {
+		return -1;
+	}
+	return setslice(pid, (uint)sticks);
 }
 
 int sys_getslice(void)
 {
 	int pid;
+	if(argint(0, &pid) < 0) {
+		return -1;
+	}
 	return getslice(pid);
 }
 
 int sys_fork2(void)
 {
-	return fork2();
+	int slice;
+	if (argint(0, &slice) < 0) {
+		return -1;
+	}
+	return fork2(slice);
 }
 
 int sys_getpinfo(void)
 {
 	struct pstat *p;
+	if(argptr(0, (void*)&p, sizeof(p)) < 0) {
+		return -1;
+	}
 	return getpinfo(p);
 }
