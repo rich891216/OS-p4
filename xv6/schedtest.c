@@ -1,10 +1,11 @@
+#include "types.h"
 #include "user.h"
 #include "syscall.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 6) {
         // incorrect number of arguments
-        exit(1);
+        exit();
     }
     int sliceA = atoi(argv[1]);
     char *sleepA = argv[2];
