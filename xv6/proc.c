@@ -64,11 +64,15 @@ void deleteFromList(struct proc *p)
 
 	if (head->pid == p->pid)
 	{
-		head = 0;
-		tail = 0;
-		test--;
-		cprintf("%d\n", test);
-		return;
+		if (head == tail) {
+			head = 0;
+			tail = 0;
+			test--;
+			cprintf("%d\n", test);
+		} else {
+			head->next = head;
+			return;
+		}
 	}
 
 	struct proc *cur = head->next;
