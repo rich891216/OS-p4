@@ -113,6 +113,41 @@ void deleteFromList(struct proc *p)
 	printlist(head);
 }
 
+void movetotail(struct proc *p) {
+	if (p == 0) {
+		cprintf("movetotail: proc is null\n");
+	}
+	if (head == 0) {
+		cprintf("movetotail: head is null\n");
+	}
+	if (p->pid == head->pid) {
+		if (head->next == 0) {
+			printlist(head);
+			return;
+		} else {
+			head = head->next;
+			p->next = 0;
+			tail->next = p;
+			tail = p;
+		}
+	} else {
+		struct proc *cur = head->next;
+		struct proc *prev = head;
+		while (cur->pid != tail->pid) {
+			if (cur->pid == p->pid) {
+				prev->next = cur->next;
+				cur->next = 0;
+				tail->next = cur;
+				tail = tail->next;
+				printlist(head);
+				return;
+			}
+			cur = cur->next;
+			prev = prev->next;
+		}
+	}
+}
+
 void pinit(void)
 {
 	initlock(&ptable.lock, "ptable");
@@ -183,6 +218,7 @@ found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
 	p->next = 0;
+	p->timeslice = 1;
 
 	addToTail(p);
 
@@ -543,7 +579,8 @@ void sleep(void *chan, struct spinlock *lk)
 	// Go to sleep.
 	p->chan = chan;
 	p->state = SLEEPING;
-
+	
+	movetotail(p);
 	sched();
 
 	// Tidy up.
@@ -566,8 +603,11 @@ wakeup1(void *chan)
 	struct proc *p;
 
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		if (p->state == SLEEPING && p->chan == chan)
+		if (p->state == SLEEPING && p->chan == chan) {
 			p->state = RUNNABLE;
+			// addToTail(p);
+		}
+			// p->state = RUNNABLE;
 }
 
 // Wake up all processes sleeping on chan.
