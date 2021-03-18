@@ -1,6 +1,7 @@
 #include "types.h"
 #include "user.h"
 #include "syscall.h"
+#include <stddef.h>
 
 int main(int argc, char *argv[]) {
     if (argc != 6) {
@@ -18,16 +19,17 @@ int main(int argc, char *argv[]) {
     if(childA == 0) {
         char *args[] = {"./loop", sleepA, NULL};
         // exec
-        execv("./loop", args);
+        exec("./loop", args);
     } else {
         int childB = fork2(sliceB);
         if(childB == 0) {
-            char *args[] = {"./loop", sleepA, NULL};
+            char *args[] = {"./loop", sleepB, NULL};
             // exec
-            execv("./loop", args);
+            exec("./loop", args);
         } else {
             // parent
             sleep(sleepParent);
+            printf(1, "parent slept");
             // getpinfo
         }
     }
