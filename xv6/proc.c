@@ -41,7 +41,6 @@ void addToTail(struct proc *p)
 	if (p == 0)
 	{
 		cprintf("addToTail: p is null, cannot add to tail.\n");
-		printlist(head);
 		return;
 	}
 
@@ -49,15 +48,13 @@ void addToTail(struct proc *p)
 	{
 		head = p;
 		tail = p;
-		printlist(head);
 		return;
 	}
 
 	tail->next = p;
 	p->next = 0;
 	tail = p;
-	cprintf("%d\n", tail->pid);
-	printlist(head);
+	// cprintf("%d\n", tail->pid);
 }
 
 void deleteFromList(struct proc *p)
@@ -65,7 +62,6 @@ void deleteFromList(struct proc *p)
 	if (p == 0)
 	{
 		cprintf("deleteFromList: p is null, cannot remove from list.\n");
-		printlist(head);
 		return;
 	}
 
@@ -80,13 +76,11 @@ void deleteFromList(struct proc *p)
 		if (head == tail) {
 			head = 0;
 			tail = 0;
-			printlist(head);
 			return;
 		}
 		else
 		{
 			head = head->next;
-			printlist(head);
 			return;
 		}
 	}
@@ -99,7 +93,6 @@ void deleteFromList(struct proc *p)
 		if (cur->pid == p->pid)
 		{
 			prev->next = cur->next;
-			printlist(head);
 			return;
 		}
 		cur = cur->next;
@@ -109,10 +102,8 @@ void deleteFromList(struct proc *p)
 	{
 		prev->next = tail->next;
 		tail = prev;
-		printlist(head);
 		return;
 	}
-	printlist(head);
 }
 
 void moveToTail(struct proc *p) {
@@ -124,7 +115,6 @@ void moveToTail(struct proc *p) {
 	}
 	if (p->pid == head->pid) {
 		if (head->next == 0) {
-			printlist(head);
 			return;
 		} else {
 			head = head->next;
@@ -141,7 +131,6 @@ void moveToTail(struct proc *p) {
 				cur->next = 0;
 				tail->next = cur;
 				tail = tail->next;
-				printlist(head);
 				return;
 			}
 			cur = cur->next;
@@ -368,7 +357,7 @@ void exit(void)
 	struct proc *curproc = myproc();
 	struct proc *p;
 	int fd;
-	deleteFromList(curproc);
+	
 
 	if (curproc == initproc)
 		panic("init exiting");
@@ -406,6 +395,7 @@ void exit(void)
 
 	// Jump into the scheduler, never to return.
 	curproc->state = ZOMBIE;
+	deleteFromList(curproc);
 	sched();
 	panic("zombie exit");
 }
@@ -492,7 +482,7 @@ void scheduler(void)
 			switchkvm();
 			c->proc = 0;
 			p = p->next;
-		} // doesn't work
+		} // working, add keeping track of ticks
 
 
 		// for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -603,7 +593,8 @@ void sleep(void *chan, struct spinlock *lk)
 	acquire(&tickslock);
 	now_ticks = ticks;
 	release(&tickslock);
-
+	// moveToTail(p);
+	deleteFromList(p);
 	sched();
 
 	// Tidy up.
@@ -628,16 +619,18 @@ wakeup1(void *chan)
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		if (p->state == SLEEPING && p->chan == chan) {
 			if (chan == &ticks) {
-				if (ticks - now_ticks < p->sleepticks) {
-					p->sleepticks--;
+				if (ticks - now_ticks < p->sleepdeadline) {
 					p->compticks++;
-				} else if (ticks - now_ticks == p->sleepticks) {
+					p->sleepticks++;
+				} else if (ticks - now_ticks == p->sleepdeadline) {
 					p->state = RUNNABLE;
-					moveToTail(p);
+					// moveToTail(p);
+					addToTail(p);
 				}
 			} else {
 				p->state = RUNNABLE;
-				moveToTail(p);
+				// moveToTail(p);
+				addToTail(p);
 			}
 		}
 }
