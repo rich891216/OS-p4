@@ -477,6 +477,24 @@ void scheduler(void)
 
 		// Loop over process table looking for process to run.
 		acquire(&ptable.lock);
+		// p = head;
+		// while (p != 0) {
+		// 	p = head;
+		// 	if (p->state != RUNNABLE) {
+		// 		moveToTail(p);
+		// 		continue;
+		// 	}
+		// 	c->proc = p;
+		// 	switchuvm(p);
+		// 	p->state = RUNNING;
+
+		// 	swtch(&(c->scheduler), p->context);
+		// 	cprintf("context switch\n");
+		// 	switchkvm();
+		// 	c->proc = 0;
+		// } // doesn't work
+
+
 		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		{
 			if (p->state != RUNNABLE)
