@@ -20,36 +20,36 @@ struct
 void addToTail(struct proc *p) {
 	if (p == NULL) {
 		cprintf("addToTail: p is null, cannot add to tail.\n");
-	} else if (ptable->head == NULL) {
-		ptable->head = p;
-		ptable->tail = p;
+	} else if (ptable.head == NULL) {
+		ptable.head = p;
+		ptable.tail = p;
 	}
 	else {
-		struct proc *temp = head;
+		struct proc *temp = ptable.head;
 		while (temp != NULL) {
 			if (temp->pid == p->pid) {
 				temp->prev->next = temp->next;
 				temp->next->prev = temp->prev;
-				ptable->tail->next = temp;
-				temp->prev = ptable->tail;
-				ptable->tail = temp;
+				ptable.tail->next = temp;
+				temp->prev = ptable.tail;
+				ptable.tail = temp;
 				return;
 			}
 			temp = temp->next;
 		}
-		ptable->tail->next = p;
-		tail->prev = ptable->tail;
-		ptable->tail = p;
+		ptable.tail->next = p;
+		ptable.tail->prev = ptable.tail;
+		ptable.tail = p;
 	}
 }
 
 void deleteFromList(struct proc *p) {
 	if (p == NULL) {
 		cprintf("deleteFromList: p is null, cannot delete.\n");
-	} else if (ptable->head == NULL) {
+	} else if (ptable.head == NULL) {
 		cprintf("deleteFromList: list is null, cannot delete.\n");
 	} else {
-		struct proc *temp = head;
+		struct proc *temp = ptable.head;
 			while (temp != NULL) {
 				if (temp->pid == p->pid) {
 					temp->prev->next = temp->next;
@@ -168,6 +168,11 @@ found:
 	return p;
 }
 
+void ptable_init() {
+	ptable.head = NULL;
+	ptable.tail = NULL;
+}
+
 //PAGEBREAK: 32
 // Set up first user process.
 void userinit(void)
@@ -175,6 +180,7 @@ void userinit(void)
 	struct proc *p;
 	extern char _binary_initcode_start[], _binary_initcode_size[];
 
+	ptable_init();
 	p = allocproc();
 
 	initproc = p;
@@ -395,7 +401,7 @@ void scheduler(void)
 
 		
 		acquire(&ptable.lock);
-		p = head;
+		p = ptable.head;
 		if (p->state != RUNNABLE) {
 			addToTail(p);
 		} else {
@@ -470,7 +476,7 @@ void yield(void)
 {
 	acquire(&ptable.lock); //DOC: yieldlock
 	myproc()->state = RUNNABLE;
-	addToTail(myproc);
+	addToTail(myproc());
 	sched();
 	release(&ptable.lock);
 }
@@ -545,7 +551,7 @@ wakeup1(void *chan)
 	struct proc *p;
 
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		if (p->state == SLEEPING && p->chan == chan && p->chan >= *chan) {
+		if (p->state == SLEEPING && p->chan == chan) {
 			p->state = RUNNABLE;
 			addToTail(p);
 		} else if (p->state == SLEEPING) {
@@ -647,6 +653,7 @@ int setslice(int pid, int slice)
 	if (!found) {
 		return -1;
 	}
+	return 0;
 }
 
 // new system call: int getslice(pid)
@@ -739,7 +746,7 @@ int getpinfo(struct pstat *ps)
 
 	// print example: A: timeslice = 2; compticks = 1; schedticks = 6; sleepticks = 4; switches = 3.
 	// cprintf("%d %s %s", ps->pid, state, p->name);
-	//int size = sizeof(ps->pid) / sizeof(ps->pid[0]);
+	int size = sizeof(ps->pid) / sizeof(ps->pid[0]);
 	for (int i = 0; i < size; i++) {
 		cprintf("%d: timeslice = %d; compticks = %d; schedticks = %d; sleepticks = %d; switches = %d.\n",
 		ps->pid, ps->timeslice[i], ps->compticks[i], ps->schedticks[i], ps->sleepticks[i], ps->switches[i]);
