@@ -7,10 +7,15 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define NULL ((char *)0)
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
 } ptable;
+
+struct proc *head = NULL;
+struct proc *tail = NULL;
 
 static struct proc *initproc;
 
@@ -19,6 +24,22 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+
+void addToTail(struct proc* p) {
+	if (p == NULL) {
+		cprintf("addToTail: p is null, cannot add to tail.\n");
+		return;
+	}
+
+	if (head == NULL) {
+		head = p;
+		tail = p;
+		return;
+	}
+
+	tail->next = p;
+	tail = p;
+}
 
 void
 pinit(void)
@@ -89,6 +110,8 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
 
+  addToTail(p);
+
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -124,7 +147,7 @@ userinit(void)
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
-  
+
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
