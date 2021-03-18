@@ -165,6 +165,7 @@ found:
 	p->context->eip = (uint)forkret;
 
 	addToTail(p);
+	p->slice = 1;
 	return p;
 }
 
