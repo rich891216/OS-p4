@@ -113,12 +113,12 @@ void deleteFromList(struct proc *p)
 	printlist(head);
 }
 
-void movetotail(struct proc *p) {
+void moveToTail(struct proc *p) {
 	if (p == 0) {
-		cprintf("movetotail: proc is null\n");
+		cprintf("moveToTail: proc is null\n");
 	}
 	if (head == 0) {
-		cprintf("movetotail: head is null\n");
+		cprintf("moveToTail: head is null\n");
 	}
 	if (p->pid == head->pid) {
 		if (head->next == 0) {
@@ -580,7 +580,6 @@ void sleep(void *chan, struct spinlock *lk)
 	p->chan = chan;
 	p->state = SLEEPING;
 	
-	movetotail(p);
 	sched();
 
 	// Tidy up.
@@ -605,7 +604,7 @@ wakeup1(void *chan)
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		if (p->state == SLEEPING && p->chan == chan) {
 			p->state = RUNNABLE;
-			// addToTail(p);
+			moveToTail(p);
 		}
 			// p->state = RUNNABLE;
 }
