@@ -70,7 +70,9 @@ void deleteFromList(struct proc *p)
 			test--;
 			cprintf("%d\n", test);
 		} else {
-			head->next = head;
+			head = head->next;
+			test--;
+			cprintf("%d\n", test);
 			return;
 		}
 	}
