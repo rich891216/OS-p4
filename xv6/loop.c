@@ -13,12 +13,12 @@ void loop(int sleepticks) {
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         // incorrect number of arguments
-        exit(1);
+        exit();
     }
     int sleepticks = atoi(argv[1]);
     if (sleepticks == 0) {
         // argv[1] can't be coverted
-        exit(1);
+        exit();
     }
     loop(sleepticks);
     return 0;
