@@ -129,7 +129,7 @@ int sys_fork2(void)
 int sys_getpinfo(void)
 {
   struct pstat *ps;
-  if () //ps is invalid
+  if (argptr(0, (void*)&ps, sizeof(*ps)) < 0) //ps is invalid
   {
 	  return -1;
   }
