@@ -17,6 +17,7 @@ struct
 struct proc *head = 0;
 struct proc *tail = 0;
 int test = 0;
+uint now_ticks = 0;
 
 static struct proc *initproc;
 
@@ -476,8 +477,8 @@ void scheduler(void)
 		sti();
 
 		// Loop over process table looking for process to run.
-		acquire(&ptable.lock);
 		p = head;
+		acquire(&ptable.lock);
 		while (p != 0) {
 			if (p->state != RUNNABLE) {
 				p = p->next;
@@ -598,7 +599,11 @@ void sleep(void *chan, struct spinlock *lk)
 	// Go to sleep.
 	p->chan = chan;
 	p->state = SLEEPING;
-	
+
+	acquire(&tickslock);
+	now_ticks = ticks;
+	release(&tickslock);
+
 	sched();
 
 	// Tidy up.
@@ -622,10 +627,19 @@ wakeup1(void *chan)
 
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		if (p->state == SLEEPING && p->chan == chan) {
-			p->state = RUNNABLE;
-			moveToTail(p);
+			if (chan == &ticks) {
+				if (ticks - now_ticks < p->sleepticks) {
+					p->sleepticks--;
+					p->compticks++;
+				} else if (ticks - now_ticks == p->sleepticks) {
+					p->state = RUNNABLE;
+					moveToTail(p);
+				}
+			} else {
+				p->state = RUNNABLE;
+				moveToTail(p);
+			}
 		}
-			// p->state = RUNNABLE;
 }
 
 // Wake up all processes sleeping on chan.
