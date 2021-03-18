@@ -54,6 +54,7 @@ void addToTail(struct proc *p)
 	tail->next = p;
 	p->next = 0;
 	tail = p;
+	cprintf("%d\n", tail->pid);
 	printlist(head);
 }
 
@@ -77,13 +78,12 @@ void deleteFromList(struct proc *p)
 		if (head == tail) {
 			head = 0;
 			tail = 0;
-			test--;
-			cprintf("%d\n", test);
 			printlist(head);
-		} else {
+			return;
+		}
+		else
+		{
 			head = head->next;
-			test--;
-			cprintf("%d\n", test);
 			printlist(head);
 			return;
 		}
@@ -94,23 +94,24 @@ void deleteFromList(struct proc *p)
 
 	while (cur != 0)
 	{
-		cprintf("cur: %d\n", cur->pid);
+		if (tail->pid == p->pid) {
+			prev->next = tail->next;
+			tail = prev;
+			printlist(head);
+			return;
+		}
+
 		if (cur->pid == p->pid)
 		{
 			prev->next = cur->next;
-			test--;
-			cprintf("%d\n", test);
 			printlist(head);
 			return;
 		}
 		cur = cur->next;
 		prev = prev->next;
 	}
-	cprintf("deleteFromList fail\n");
 	printlist(head);
 }
-
-
 
 void pinit(void)
 {
