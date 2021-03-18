@@ -25,11 +25,21 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+void printlist(struct proc *head) {
+	cprintf("[pid: %d]\n", head->pid);
+	struct proc *cur = head->next;
+	while (cur != 0) {
+		cprintf("[pid: %d]\n", cur->pid);
+		cur = cur->next;
+	}
+}
+
 void addToTail(struct proc *p)
 {
 	if (p == 0)
 	{
 		cprintf("addToTail: p is null, cannot add to tail.\n");
+		printlist(head);
 		return;
 	}
 
@@ -37,12 +47,14 @@ void addToTail(struct proc *p)
 	{
 		head = p;
 		tail = p;
+		printlist(head);
 		return;
 	}
 
 	tail->next = p;
 	p->next = 0;
 	tail = p;
+	printlist(head);
 }
 
 void deleteFromList(struct proc *p)
@@ -50,6 +62,7 @@ void deleteFromList(struct proc *p)
 	if (p == 0)
 	{
 		cprintf("deleteFromList: p is null, cannot remove from list.\n");
+		printlist(head);
 		return;
 	}
 
@@ -66,10 +79,12 @@ void deleteFromList(struct proc *p)
 			tail = 0;
 			test--;
 			cprintf("%d\n", test);
+			printlist(head);
 		} else {
 			head = head->next;
 			test--;
 			cprintf("%d\n", test);
+			printlist(head);
 			return;
 		}
 	}
@@ -85,13 +100,17 @@ void deleteFromList(struct proc *p)
 			prev->next = cur->next;
 			test--;
 			cprintf("%d\n", test);
+			printlist(head);
 			return;
 		}
 		cur = cur->next;
 		prev = prev->next;
 	}
 	cprintf("deleteFromList fail\n");
+	printlist(head);
 }
+
+
 
 void pinit(void)
 {
@@ -162,6 +181,7 @@ allocproc(void)
 found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
+	p->next = 0;
 
 	addToTail(p);
 
@@ -308,6 +328,7 @@ void exit(void)
 	struct proc *curproc = myproc();
 	struct proc *p;
 	int fd;
+	deleteFromList(curproc);
 
 	if (curproc == initproc)
 		panic("init exiting");
@@ -345,7 +366,6 @@ void exit(void)
 
 	// Jump into the scheduler, never to return.
 	curproc->state = ZOMBIE;
-	deleteFromList(curproc);
 	sched();
 	panic("zombie exit");
 }
