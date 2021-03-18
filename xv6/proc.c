@@ -92,15 +92,8 @@ void deleteFromList(struct proc *p)
 	struct proc *cur = head->next;
 	struct proc *prev = head;
 
-	while (cur != 0)
+	while (cur->pid != tail->pid)
 	{
-		if (tail->pid == p->pid) {
-			prev->next = tail->next;
-			tail = prev;
-			printlist(head);
-			return;
-		}
-
 		if (cur->pid == p->pid)
 		{
 			prev->next = cur->next;
@@ -109,6 +102,13 @@ void deleteFromList(struct proc *p)
 		}
 		cur = cur->next;
 		prev = prev->next;
+	}
+	if (tail->pid == p->pid) 
+	{
+		prev->next = tail->next;
+		tail = prev;
+		printlist(head);
+		return;
 	}
 	printlist(head);
 }
