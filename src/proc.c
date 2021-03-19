@@ -660,15 +660,18 @@ int setslice(int pid, int slice) {
 	if (slice < 1) {
 		return -1;
 	}
+	acquire(&ptable.lock);
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if(p->state == UNUSED) {
 			continue;
 		}
 		if (p->pid == pid) {
 			p->timeslice = slice;
+			release(&ptable.lock);
 			return 0;
 		}
 	}
+	release(&ptable.lock);
 	return -1;
 }
 

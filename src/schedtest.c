@@ -65,6 +65,8 @@ int main(int argc, char *argv[]) {
 				}
 			}
 			printf(1, "%d %d\n", compticksA, compticksB);
+			wait();
+			wait();
 			exit();
 		}
 	}
