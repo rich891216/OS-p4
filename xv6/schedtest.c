@@ -4,37 +4,61 @@
 #include <stddef.h>
 #include "pstat.h"
 #include "param.h"
+
+static int schedtestFork(int slice, char *sleepT) {
+	int pid = fork2(slice);
+	int child = -1;
+
+	if (pid != -1) {
+		if (pid == 0) {
+			child = getpid();
+			char *args[] = {"loop", sleepT};
+			exec(args[0], args);
+
+			printf(2, "exec failed\n");
+			exit();
+		} else {
+			wait();
+		}
+	} else {
+		printf(2, "fork failed\n");
+	}
+	return child;
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 6) {
-        // incorrect number of arguments
-        exit();
-    }
+		printf(2, "Usage: schedtest sliceA sleepA sliceB sleepB sleepParent\n");
+		exit();
+	}
     int sliceA = atoi(argv[1]);
     char *sleepA = argv[2];
     int sliceB = atoi(argv[3]);
     char *sleepB = argv[4];
     int sleepParent = atoi(argv[5]);
+	struct pstat ps;
 
+	printf(1, "%d\n", sliceA);
+	int childA = schedtestFork(sliceA, sleepA);
+	int childB = schedtestFork(sliceB, sleepB);
+	sleep(sleepParent);
 
-    int childA = fork2(sliceA);
-    if(childA == 0) {
-        char *args[] = {"./loop", sleepA, NULL};
-        // exec
-        exec("./loop", args);
-    } else {
-        int childB = fork2(sliceB);
-        if(childB == 0) {
-            char *args[] = {"./loop", sleepB, NULL};
-            // exec
-            exec("./loop", args);
-        } else {
-            // parent
-            sleep(sleepParent);
-            printf(1, "parent slept");
-            // getpinfo
-            struct pstat *ps = 0;
-            getpinfo(ps);
-        }
-    }
-    exit();
+	int compticksA = 0;
+	int compticksB = 0;
+
+	if (getpinfo(&ps) == 0) {
+		for (int i = 0; i < NPROC; i++) {
+			if (childA == ps.pid[i]) {
+				compticksA = ps.compticks[i];
+			}
+
+			if (childB == ps.compticks[i]) {
+				compticksB = ps.compticks[i];
+			}
+		}
+		printf(1, "%d %d\n", compticksA, compticksB);
+	} else {
+		printf(2, "Error: Could not access ptable correctly.\n");
+	}
+	exit();
 }
