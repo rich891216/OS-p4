@@ -42,35 +42,33 @@ int main(int argc, char *argv[]) {
 	// int childB = schedtestFork(sliceB, sleepB);
 
 	int childA = fork2(sliceA);
+	int childB = 0;
 	if (childA == 0) {
 		char *args[] = {"loop", sleepA, 0};
 		exec(args[0], args);
 		exit();
+	} else if ((childB = fork2(sliceB)) == 0) {
+		char *args[] = {"loop", sleepB, 0};
+		exec(args[0], args);
+		exit();
 	} else {
 		wait();
-		int childB = fork2(sliceB);
-		if (childB == 0) {
-			char *args[] = {"loop", sleepB, 0};
-			exec(args[0], args);
-			exit();
-		} else {
-			wait();
-			sleep(sleepParent);
-			int compticksA = 0;
-			int compticksB = 0;
-			if (getpinfo(&ps) == 0) {
-				for(int i = 0; i < NPROC; i++) {
-					if (childA == ps.pid[i]) {
+		sleep(sleepParent);
+		int compticksA = 0;
+		int compticksB = 0;
+		if (getpinfo(&ps) == 0) {
+			for(int i = 0; i < NPROC; i++) {
+				if (childA == ps.pid[i]) {
 						compticksA = ps.compticks[i];
-					} else if (childB == ps.pid[i]) {
-						compticksB = ps.compticks[i];
-					}
+				} else if (childB == ps.pid[i]) {
+					compticksB = ps.compticks[i];
 				}
-				printf(1, "%d %d\n", compticksA, compticksB);
-				exit();
 			}
+			printf(1, "%d %d\n", compticksA, compticksB);
+			exit();
 		}
 	}
+
 	// sleep(sleepParent);
 
 	// int compticksA = 0;
