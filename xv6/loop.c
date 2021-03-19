@@ -18,12 +18,16 @@ int main(int argc, char *argv[]) {
         printf(2, "sleepticks is negative\n");
         exit();
     }
+    printf(1, "sleeping for %d ticks\n", sleepticks);
     sleep(sleepticks);
+    printf(1, "slept for %d ticks\n", sleepticks);
+    setslice(getpid(), 100);
     int i = 0;
     int j = 0;
     while (i < 800000000) {
         j += i * j + 1;
         i++;
     }
+    printf(1, "loop done\n");
     exit();
 }

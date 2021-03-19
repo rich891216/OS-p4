@@ -477,8 +477,11 @@ void scheduler(void)
 			c->proc = p;
 			switchuvm(p);
 			p->state = RUNNING;
-
+			acquire(&tickslock);
+			p->starttick = ticks;
+			release(&tickslock);
 			swtch(&(c->scheduler), p->context);
+
 			switchkvm();
 			c->proc = 0;
 			p = p->next;
