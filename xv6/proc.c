@@ -750,8 +750,12 @@ int getpinfo(struct pstat *ps) {
 	// cprintf("%d %s %s", ps->pid, state, p->name);
 	int size = sizeof(ps->pid) / sizeof(ps->pid[0]);
 	for (int i = 0; i < size; i++) {
-		cprintf("%d: timeslice = %d; compticks = %d; schedticks = %d; sleepticks = %d; switches = %d.\n",
-		ps->pid, ps->timeslice[i], ps->compticks[i], ps->schedticks[i], ps->sleepticks[i], ps->switches[i]);
+		if (ps->inuse[i]) {
+			cprintf("%d: timeslice = %d; compticks = %d; schedticks = %d; sleepticks = %d; switches = %d.\n",
+			ps->pid[i], ps->timeslice[i], ps->compticks[i], ps->schedticks[i], ps->sleepticks[i], ps->switches[i]);
+		}
+		// cprintf("%d: timeslice = %d; compticks = %d; schedticks = %d; sleepticks = %d; switches = %d.\n",
+		// ps->pid[i], ps->timeslice[i], ps->compticks[i], ps->schedticks[i], ps->sleepticks[i], ps->switches[i]);
 	}
 	return 0;
 }
