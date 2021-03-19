@@ -17,7 +17,6 @@ struct
 struct proc *head = 0;
 struct proc *tail = 0;
 
-
 uint now_ticks = 0;
 
 static struct proc *initproc;
@@ -28,10 +27,12 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-void printlist(struct proc *head) {
+void printlist(struct proc *head)
+{
 	cprintf("[pid: %d]\n", head->pid);
 	struct proc *cur = head->next;
-	while (cur != 0) {
+	while (cur != 0)
+	{
 		cprintf("[pid: %d]\n", cur->pid);
 		cur = cur->next;
 	}
@@ -73,7 +74,8 @@ void deleteFromList(struct proc *p)
 
 	if (head->pid == p->pid)
 	{
-		if (head == tail) {
+		if (head == tail)
+		{
 			head = 0;
 			tail = 0;
 			return;
@@ -98,7 +100,7 @@ void deleteFromList(struct proc *p)
 		cur = cur->next;
 		prev = prev->next;
 	}
-	if (tail->pid == p->pid) 
+	if (tail->pid == p->pid)
 	{
 		prev->next = tail->next;
 		tail = prev;
@@ -329,7 +331,6 @@ void exit(void)
 	struct proc *curproc = myproc();
 	struct proc *p;
 	int fd;
-	
 
 	if (curproc == initproc)
 		panic("init exiting");
@@ -441,8 +442,11 @@ void scheduler(void)
 		// Loop over process table looking for process to run.
 		p = head;
 		acquire(&ptable.lock);
-		while (p != 0) {
-			if (p->state != RUNNABLE) {
+
+		while (p != 0)
+		{
+			if (p->state != RUNNABLE)
+			{
 				p = p->next;
 				continue;
 			}
@@ -570,16 +574,25 @@ wakeup1(void *chan)
 	struct proc *p;
 
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		if (p->state == SLEEPING && p->chan == chan) {
-			if (chan == &ticks) {
-				if (ticks - now_ticks < p->sleepdeadline) {
+		if (p->state == SLEEPING && p->chan == chan)
+		{
+			if (chan == &ticks)
+			{
+				if (ticks - now_ticks < p->sleepdeadline)
+				{
 					p->compticks++;
 					p->sleepticks++;
-				} else if (ticks - now_ticks == p->sleepdeadline) {
+				}
+				else if (ticks - now_ticks == p->sleepdeadline)
+				{
+					p->compticks++;
+					p->sleepticks++;
 					p->state = RUNNABLE;
 					addToTail(p);
 				}
-			} else {
+			}
+			else
+			{
 				p->state = RUNNABLE;
 				addToTail(p);
 			}
@@ -655,17 +668,22 @@ void procdump(void)
 	}
 }
 
-int setslice(int pid, int slice) {
+int setslice(int pid, int slice)
+{
 	struct proc *p;
-	if (slice < 1) {
+	if (slice < 1)
+	{
 		return -1;
 	}
 	acquire(&ptable.lock);
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-		if(p->state == UNUSED) {
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	{
+		if (p->state == UNUSED)
+		{
 			continue;
 		}
-		if (p->pid == pid) {
+		if (p->pid == pid)
+		{
 			p->timeslice = slice;
 			release(&ptable.lock);
 			return 0;
@@ -675,20 +693,25 @@ int setslice(int pid, int slice) {
 	return -1;
 }
 
-int getslice(int pid) {
+int getslice(int pid)
+{
 	struct proc *p;
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-		if (p->state == UNUSED) {
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	{
+		if (p->state == UNUSED)
+		{
 			continue;
 		}
-		if(p->pid == pid) {
+		if (p->pid == pid)
+		{
 			return p->timeslice;
 		}
 	}
 	return -1;
 }
 
-int fork2(int slice) {
+int fork2(int slice)
+{
 	int i, pid;
 	struct proc *np;
 	struct proc *curproc = myproc();
@@ -707,7 +730,7 @@ int fork2(int slice) {
 		np->state = UNUSED;
 		return -1;
 	}
-	
+
 	np->sz = curproc->sz;
 	np->parent = curproc;
 	*np->tf = *curproc->tf;
@@ -734,16 +757,20 @@ int fork2(int slice) {
 	return pid;
 }
 
-int getpinfo(struct pstat *ps) {
-	if (ps == 0) {
+int getpinfo(struct pstat *ps)
+{
+	if (ps == 0)
+	{
 		return -1;
 	}
 
 	int index = 0;
 	struct proc *p;
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	{
 		ps->inuse[index] = 0;
-		if (p->state != UNUSED) {
+		if (p->state != UNUSED)
+		{
 			ps->inuse[index] = 1;
 		}
 		ps->pid[index] = p->pid;
@@ -758,10 +785,12 @@ int getpinfo(struct pstat *ps) {
 	// print example: A: timeslice = 2; compticks = 1; schedticks = 6; sleepticks = 4; switches = 3.
 	// cprintf("%d %s %s", ps->pid, state, p->name);
 	int size = sizeof(ps->pid) / sizeof(ps->pid[0]);
-	for (int i = 0; i < size; i++) {
-		if (ps->inuse[i]) {
+	for (int i = 0; i < size; i++)
+	{
+		if (ps->inuse[i])
+		{
 			cprintf("%d: timeslice = %d; compticks = %d; schedticks = %d; sleepticks = %d; switches = %d.\n",
-			ps->pid[i], ps->timeslice[i], ps->compticks[i], ps->schedticks[i], ps->sleepticks[i], ps->switches[i]);
+					ps->pid[i], ps->timeslice[i], ps->compticks[i], ps->schedticks[i], ps->sleepticks[i], ps->switches[i]);
 		}
 		// cprintf("%d: timeslice = %d; compticks = %d; schedticks = %d; sleepticks = %d; switches = %d.\n",
 		// ps->pid[i], ps->timeslice[i], ps->compticks[i], ps->schedticks[i], ps->sleepticks[i], ps->switches[i]);

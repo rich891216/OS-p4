@@ -1,0 +1,9 @@
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -Og -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o schedtest.o schedtest.c
+[01m[Kschedtest.c:[m[K In function ‘[01m[Kmain[m[K’:
+[01m[Kschedtest.c:45:11:[m[K [01;31m[Kerror: [m[Kincompatible type for argument 1 of ‘[01m[Kgetpinfo[m[K’
+   45 |  getpinfo([01;31m[Kps[m[K);
+--
+In file included from [01m[Kschedtest.c:2[m[K:
+[01m[Kuser.h:31:14:[m[K [01;36m[Knote: [m[Kexpected ‘[01m[Kstruct pstat *[m[K’ but argument is of type ‘[01m[Kstruct pstat[m[K’
+--
+make: *** [<builtin>: schedtest.o] Error 1
