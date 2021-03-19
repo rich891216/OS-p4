@@ -105,14 +105,12 @@ trap(struct trapframe *tf)
   if(myproc() && myproc()->state == RUNNING &&
      tf->trapno == T_IRQ0+IRQ_TIMER) {
        acquire(&tickslock);
-       cprintf("tick: %d, starttick: %d\n", ticks, myproc()->starttick);
-       if (ticks - myproc()->starttick < myproc()->timeslice) {
-         cprintf("time slice not up, don't yield\n");
+       if (ticks - myproc()->starttick < myproc()->timeslice + myproc()->compticks) {
          release(&tickslock);
        } else {
          release(&tickslock);
-         cprintf("time slice up, yield\n");
-         yield();
+		 myproc()->compticks = 0;
+		 yield();
        }
       // yield();
      }

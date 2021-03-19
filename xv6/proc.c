@@ -16,7 +16,8 @@ struct
 
 struct proc *head = 0;
 struct proc *tail = 0;
-int test = 0;
+
+
 uint now_ticks = 0;
 
 static struct proc *initproc;
@@ -54,7 +55,6 @@ void addToTail(struct proc *p)
 	tail->next = p;
 	p->next = 0;
 	tail = p;
-	// cprintf("%d\n", tail->pid);
 }
 
 void deleteFromList(struct proc *p)
@@ -103,39 +103,6 @@ void deleteFromList(struct proc *p)
 		prev->next = tail->next;
 		tail = prev;
 		return;
-	}
-}
-
-void moveToTail(struct proc *p) {
-	if (p == 0) {
-		cprintf("moveToTail: proc is null\n");
-	}
-	if (head == 0) {
-		cprintf("moveToTail: head is null\n");
-	}
-	if (p->pid == head->pid) {
-		if (head->next == 0) {
-			return;
-		} else {
-			head = head->next;
-			p->next = 0;
-			tail->next = p;
-			tail = p;
-		}
-	} else {
-		struct proc *cur = head->next;
-		struct proc *prev = head;
-		while (cur->pid != tail->pid) {
-			if (cur->pid == p->pid) {
-				prev->next = cur->next;
-				cur->next = 0;
-				tail->next = cur;
-				tail = tail->next;
-				return;
-			}
-			cur = cur->next;
-			prev = prev->next;
-		}
 	}
 }
 
@@ -486,27 +453,6 @@ void scheduler(void)
 			c->proc = 0;
 			p = p->next;
 		} // working, add keeping track of ticks
-
-
-		// for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		// {
-		// 	if (p->state != RUNNABLE)
-		// 		continue;
-
-		// 	// Switch to chosen process.  It is the process's job
-		// 	// to release ptable.lock and then reacquire it
-		// 	// before jumping back to us.
-		// 	c->proc = p;
-		// 	switchuvm(p);
-		// 	p->state = RUNNING;
-
-		// 	swtch(&(c->scheduler), p->context);
-		// 	switchkvm();
-
-		// 	// Process is done running for now.
-		// 	// It should have changed its p->state before coming back.
-		// 	c->proc = 0;
-		// }
 		release(&ptable.lock);
 	}
 }
@@ -596,7 +542,6 @@ void sleep(void *chan, struct spinlock *lk)
 	acquire(&tickslock);
 	now_ticks = ticks;
 	release(&tickslock);
-	// moveToTail(p);
 	deleteFromList(p);
 	sched();
 
@@ -627,12 +572,10 @@ wakeup1(void *chan)
 					p->sleepticks++;
 				} else if (ticks - now_ticks == p->sleepdeadline) {
 					p->state = RUNNABLE;
-					// moveToTail(p);
 					addToTail(p);
 				}
 			} else {
 				p->state = RUNNABLE;
-				// moveToTail(p);
 				addToTail(p);
 			}
 		}
