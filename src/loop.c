@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     printf(1, "sleeping for %d ticks\n", sleepticks);
     sleep(sleepticks);
     printf(1, "slept for %d ticks\n", sleepticks);
-    setslice(getpid(), 100);
+	
     int i = 0;
     int j = 0;
     while (i < 800000000) {

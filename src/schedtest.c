@@ -38,7 +38,6 @@ int main(int argc, char *argv[]) {
     int sleepParent = atoi(argv[5]);
 	struct pstat ps;
 
-	printf(1, "%d\n", sliceA);
 	// int childA = schedtestFork(sliceA, sleepA);
 	// int childB = schedtestFork(sliceB, sleepB);
 
