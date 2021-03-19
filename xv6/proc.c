@@ -733,7 +733,10 @@ int getpinfo(struct pstat *ps) {
 	int index = 0;
 	struct proc *p;
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-		ps->inuse[index] = 1;
+		ps->inuse[index] = 0;
+		if (p->state != UNUSED) {
+			ps = 1;
+		}
 		ps->pid[index] = p->pid;
 		ps->timeslice[index] = p->timeslice;
 		ps->compticks[index] = p->compticks;
