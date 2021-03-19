@@ -108,9 +108,10 @@ trap(struct trapframe *tf)
        if (ticks - myproc()->starttick < myproc()->timeslice + myproc()->compticks) {
          release(&tickslock);
        } else {
-         release(&tickslock);
-		 myproc()->compticks = 0;
-		 yield();
+          release(&tickslock);
+		      myproc()->compticks = 0;
+          myproc()->switches++;
+		      yield();
        }
       // yield();
      }

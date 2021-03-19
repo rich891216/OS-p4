@@ -177,6 +177,11 @@ found:
 	p->pid = nextpid++;
 	p->next = 0;
 	p->timeslice = 1;
+	p->compticks = 0;
+	p->schedticks = 0;
+	p->sleepticks = 0;
+	p->switches = 0;
+	p->sleepdeadline = 0;
 
 	addToTail(p);
 
