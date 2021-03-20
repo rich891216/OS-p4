@@ -38,11 +38,11 @@ void printlist(struct proc *head)
 	}
 }
 
-void addToTail(struct proc *p)
+void push(struct proc *p)
 {
 	if (p == 0)
 	{
-		cprintf("addToTail: p is null, cannot add to tail.\n");
+		cprintf("push: p is null, cannot add to tail.\n");
 		return;
 	}
 
@@ -58,53 +58,22 @@ void addToTail(struct proc *p)
 	tail = p;
 }
 
-void deleteFromList(struct proc *p)
+void pop()
 {
-	if (p == 0)
-	{
-		cprintf("deleteFromList: p is null, cannot remove from list.\n");
-		return;
-	}
-
 	if (head == 0)
 	{
-		cprintf("deleteFromList: list is empty.\n");
+		cprintf("pop: list is empty.\n");
 		return;
 	}
 
-	if (head->pid == p->pid)
+	if (head == tail)
 	{
-		if (head == tail)
-		{
-			head = 0;
-			tail = 0;
-			return;
-		}
-		else
-		{
+		head = 0;
+		tail = 0;
+		return;
+	} else {
 			head = head->next;
 			return;
-		}
-	}
-
-	struct proc *cur = head->next;
-	struct proc *prev = head;
-
-	while (cur->pid != tail->pid)
-	{
-		if (cur->pid == p->pid)
-		{
-			prev->next = cur->next;
-			return;
-		}
-		cur = cur->next;
-		prev = prev->next;
-	}
-	if (tail->pid == p->pid)
-	{
-		prev->next = tail->next;
-		tail = prev;
-		return;
 	}
 }
 
@@ -177,7 +146,6 @@ allocproc(void)
 found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
-	p->next = 0;
 	p->timeslice = 1;
 	p->compticks = 0;
 	p->schedticks = 0;
@@ -247,7 +215,7 @@ void userinit(void)
 	acquire(&ptable.lock);
 
 	p->state = RUNNABLE;
-	addToTail(p);
+	push(p);
 
 	release(&ptable.lock);
 }
@@ -372,7 +340,6 @@ void exit(void)
 	curproc->state = ZOMBIE;
 	sched();
 	panic("zombie exit");
-	deleteFromList(curproc);
 }
 
 // Wait for a child process to exit and return its pid.
@@ -454,8 +421,7 @@ void scheduler(void)
 
 			if (p->state != RUNNABLE)
 			{
-				p = p->next;
-				deleteFromList(p);
+				pop(p);
 				continue;
 			}
 
@@ -474,10 +440,10 @@ void scheduler(void)
 			} else {
 				p->switches++;
 				p->newsleepticks = 0;
-				deleteFromList(p);
+				pop(p);
 
 				if (p->state != SLEEPING) {
-					addToTail(p);
+					push(p);
 					p->ticks = 0;
 				}
 				continue;
@@ -569,10 +535,7 @@ void sleep(void *chan, struct spinlock *lk)
 	p->chan = chan;
 	p->state = SLEEPING;
 
-	acquire(&tickslock);
-	now_ticks = ticks;
-	release(&tickslock);
-	deleteFromList(p);
+	pop(p);
 	sched();
 
 	// Tidy up.
@@ -599,23 +562,11 @@ wakeup1(void *chan)
 		{
 			if (chan == &ticks)
 			{
-				if (ticks - now_ticks < p->sleepdeadline)
-				{
-					p->compticks++;
-					p->sleepticks++;
-				}
-				else if (ticks - now_ticks == p->sleepdeadline)
-				{
-					p->compticks++;
-					p->sleepticks++;
+				if (ticks >= p->sleepdeadline) {
 					p->state = RUNNABLE;
-					addToTail(p);
+					push(p);
+					p->ticks = 0;
 				}
-			}
-			else
-			{
-				p->state = RUNNABLE;
-				addToTail(p);
 			}
 		}
 }
@@ -730,19 +681,19 @@ int getslice(int pid)
 			return p->timeslice;
 		}
 	}
+	release(&ptable.lock);
 	return -1;
 }
 
 int fork2(int slice)
 {
-	if (slice < 1)
-	{
-		return -1;
-	}
-	
 	int i, pid;
 	struct proc *np;
 	struct proc *curproc = myproc();
+
+	if (slice < 1) {
+		return -1;
+	}
 
 	// Allocate process.
 	if ((np = allocproc()) == 0)
@@ -779,7 +730,7 @@ int fork2(int slice)
 
 	np->state = RUNNABLE;
 	setslice(np->pid, slice);
-	addToTail(np);
+	push(np);
 
 	release(&ptable.lock);
 
@@ -795,6 +746,7 @@ int getpinfo(struct pstat *ps)
 
 	int index = 0;
 	struct proc *p;
+	acquire(&ptable.lock);
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 	{
 		ps->inuse[index] = 0;
@@ -810,6 +762,7 @@ int getpinfo(struct pstat *ps)
 		ps->switches[index] = p->switches;
 		index++;
 	}
+	release(&ptable.lock);
 
 	// print example: A: timeslice = 2; compticks = 1; schedticks = 6; sleepticks = 4; switches = 3.
 	// cprintf("%d %s %s", ps->pid, state, p->name);

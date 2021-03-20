@@ -84,7 +84,7 @@ int sys_setslice(void)
 {
 	int pid;
 	int slice;
-	if (argint(0, &pid) < 0 || argint(1, &slice))
+	if (argint(0, &pid) < 0 || argint(1, &slice) < 0)
 	{
 		return -1;
 	}
