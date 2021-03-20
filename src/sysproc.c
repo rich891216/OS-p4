@@ -55,12 +55,13 @@ int sys_sleep(void)
 {
 	int n;
 	struct proc *p = myproc();
+	uint ticks0;
 
 	if (argint(0, &n) < 0)
 		return -1;
 	acquire(&tickslock);
-
-	p->sleepdeadline = n;
+	ticks0 = ticks;
+	p->sleepdeadline = ticks0 + n;
 	sleep(&ticks, &tickslock);
 
 	release(&tickslock);

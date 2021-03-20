@@ -439,31 +439,72 @@ void scheduler(void)
 		// Enable interrupts on this processor.
 		sti();
 
-		// Loop over process table looking for process to run.
-		p = head;
-		acquire(&ptable.lock);
-
-		while (p != 0)
+		while (1)
 		{
+			p = head;
+
+			if (p == 0) {
+				break;
+			}
+
 			if (p->state != RUNNABLE)
 			{
-				p = p->next;
+				deleteFromList(p);
 				continue;
 			}
-			c->proc = p;
-			switchuvm(p);
-			p->state = RUNNING;
-			acquire(&tickslock);
-			p->starttick = ticks;
-			release(&tickslock);
-			swtch(&(c->scheduler), p->context);
+			
+			if (p->schedticks < p->timeslice + p->compticks) {
+				p->schedticks++;
 
-			switchkvm();
-			c->proc = 0;
-			p = p->next;
-		} // working, add keeping track of ticks
-		release(&ptable.lock);
+				c->proc = p;
+				switchuvm(p);
+				p->state = RUNNING;
+				acquire(&tickslock);
+				p->starttick = ticks;
+				release(&tickslock);
+				swtch(&(c->scheduler), p->context);
+
+				switchkvm();
+				c->proc = 0;
+			} else {
+				p->switches++;
+				p->compticks = 0;
+				deleteFromList(p);
+
+				if (p->state != SLEEPING) {
+					deleteFromList(p);
+					p->schedticks = 0;
+				}
+				continue;
+			}
+		}
 	}
+	release(&ptable.lock);
+
+		// Loop over process table looking for process to run.
+		// p = head;
+		// acquire(&ptable.lock);
+
+		// while (p != 0)
+		// {
+		// 	if (p->state != RUNNABLE)
+		// 	{
+		// 		p = p->next;
+		//		continue;
+		//	}
+		//	c->proc = p;
+		//	switchuvm(p);
+		//	p->state = RUNNING;
+		//	acquire(&tickslock);
+		//	p->starttick = ticks;
+		//	release(&tickslock);
+		//	swtch(&(c->scheduler), p->context);
+
+		//	switchkvm();
+		//	c->proc = 0;
+		//	p = p->next;
+		//} // working, add keeping track of ticks
+		//release(&ptable.lock);
 }
 
 // Enter scheduler.  Must hold only ptable.lock

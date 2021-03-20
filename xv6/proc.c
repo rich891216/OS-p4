@@ -425,7 +425,7 @@ void scheduler(void)
 				continue;
 			}
 
-			if (p->ticks < p->timeslice + p->sleepticks) {
+			if (p->ticks < p->timeslice + p->newsleepticks) {
 				p->ticks++;
 				p->schedticks++;
 				if (p->ticks > p->timeslice) {
