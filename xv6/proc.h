@@ -49,16 +49,15 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  struct proc *next;		// next pointer
-  int timeslice;        // time slice given
-  int compticks;        // compensation ticks
-  int schedticks;       // total number of timer ticks this process has been scheduled
-  int sleepticks;       // number of ticks during which this process was blocked
-  int switches;         // total num times this process has been scheduled
-  int sleepdeadline;    // number of ticks proc should sleep for
-  int starttick;        // tick number the process scheduled (WARNING: ONLY CHANGE WHEN SCHEDULED)
-  int ticks;			// ticks process has used
-  int newsleepticks;	// sleep ticks added from sleep() call
+  struct proc *next;  	// pointer to next one
+  int timeslice;	    // used for allocated time_slice
+  int compticks;  	    // number of compensation ticks this process has used
+  int schedticks; 	    // total number of timer ticks this process has been scheduled
+  int sleepticks; 	  	// number of ticks during which this process was blocked
+  int switches;    	    // total num times this process has been scheduled
+  uint sleepdeadline; 	// target wake up time
+  int curticks; 		// track how many ticks this process has been used
+  int cursleepticks;  // passed in argument
 };
 
 // Process memory is laid out contiguously, low addresses first:

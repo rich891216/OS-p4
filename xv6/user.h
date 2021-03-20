@@ -1,3 +1,5 @@
+#include "types.h"
+
 struct stat;
 struct rtcdate;
 struct pstat;
@@ -24,12 +26,10 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-// added system calls
-int setslice(int, int);
 int getslice(int);
+int setslice(int, int);
 int fork2(int);
 int getpinfo(struct pstat*);
-
 
 // ulib.c
 int stat(const char*, struct stat*);
