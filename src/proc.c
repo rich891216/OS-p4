@@ -447,10 +447,6 @@ void scheduler(void)
 		{
 			if (p->state != RUNNABLE)
 			{
-				if (p->state == SLEEPING && ticks - p->starttick <= p->sleepdeadline) {
-					p->sleepticks++;
-					p->compticks++;
-				}
 				p = p->next;
 				continue;
 			} else {
@@ -584,15 +580,11 @@ wakeup1(void *chan)
 		{
 			if (chan == &ticks)
 			{
-				if (ticks - now_ticks < p->sleepdeadline)
+				if (ticks - now_ticks <= p->sleepdeadline)
 				{
 					p->compticks++;
 					p->sleepticks++;
-				}
-				else if (ticks - now_ticks == p->sleepdeadline)
-				{
-					p->compticks++;
-					p->sleepticks++;
+				} else {
 					p->state = RUNNABLE;
 					addToTail(p);
 				}
