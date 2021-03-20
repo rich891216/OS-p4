@@ -618,6 +618,7 @@ int kill(int pid)
 		if (p->pid == pid)
 		{
 			p->killed = 1;
+			deleteFromList(p);
 			// Wake process from sleep if necessary.
 			if (p->state == SLEEPING)
 				p->state = RUNNABLE;

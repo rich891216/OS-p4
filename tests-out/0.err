@@ -1,4 +1,4 @@
-expect: spawn id exp6 not open
+expect: spawn id exp5 not open
     while executing
 "expect {
     "$ "    {}
