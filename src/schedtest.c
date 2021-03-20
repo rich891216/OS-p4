@@ -41,35 +41,69 @@ int main(int argc, char *argv[]) {
 	// int childA = schedtestFork(sliceA, sleepA);
 	// int childB = schedtestFork(sliceB, sleepB);
 
-	int childA = fork2(sliceA);
+	int childA = 0;
 	int childB = 0;
-	if (childA == 0) {
-		char *args[] = {"loop", sleepA, 0};
-		exec(args[0], args);
-		exit();
-	} else if ((childB = fork2(sliceB)) == 0) {
-		char *args[] = {"loop", sleepB, 0};
-		exec(args[0], args);
-		exit();
-	} else {
-		wait();
-		sleep(sleepParent);
-		int compticksA = 0;
-		int compticksB = 0;
-		if (getpinfo(&ps) == 0) {
-			for(int i = 0; i < NPROC; i++) {
-				if (childA == ps.pid[i]) {
+
+	if ((childA = fork2(sliceA))) {
+		if ((childB = fork2(sliceB))) {
+			sleep(sleepParent);
+			int compticksA = 0;
+			int compticksB = 0;
+			if (getpinfo(&ps) == 0) {
+				for (int i = 0; i < NPROC; i++) {
+					if (childA == ps.pid[i]) {
+						printf(1, "childA\n");
 						compticksA = ps.compticks[i];
-				} else if (childB == ps.pid[i]) {
-					compticksB = ps.compticks[i];
+					}
+					else if (childB == ps.pid[i]) {
+						printf(1, "childB\n");
+						compticksB = ps.compticks[i];
+					}
 				}
+				printf(1, "%d %d\n", compticksA, compticksB);
 			}
-			printf(1, "%d %d\n", compticksA, compticksB);
 			wait();
 			wait();
 			exit();
+		} else {
+			char *args[] = {"loop", sleepB, 0};
+			exec(args[0], args);
+			exit();
 		}
+	} else {
+		char *args[] = {"loop", sleepA, 0};
+		exec(args[0], args);
+		exit();
 	}
+	// if ((childA = fork2(sliceA)) == 0) {
+	// 	char *args[] = {"loop", sleepA, 0};
+	// 	exec(args[0], args);
+	// 	exit();
+	// } else if ((childB = fork2(sliceB)) == 0) {
+	// 	char *args[] = {"loop", sleepB, 0};
+	// 	exec(args[0], args);
+	// 	exit();
+	// } else {
+	// 	wait();
+	// 	sleep(sleepParent);
+	// 	int compticksA = 0;
+	// 	int compticksB = 0;
+	// 	if (getpinfo(&ps) == 0) {
+	// 		for(int i = 0; i < NPROC; i++) {
+	// 			if (childA == ps.pid[i]) {
+	// 				printf(1, "childA\n");
+	// 				compticksA = ps.compticks[i];
+	// 			} else if (childB == ps.pid[i]) {
+	// 				printf(1, "childB\n");
+	// 				compticksB = ps.compticks[i];
+	// 			}
+	// 		}
+	// 		printf(1, "%d %d\n", compticksA, compticksB);
+	// 		// wait();
+	// 		// wait();
+	// 		exit();
+	// 	}
+	// }
 
 	// sleep(sleepParent);
 

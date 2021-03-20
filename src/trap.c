@@ -106,11 +106,13 @@ trap(struct trapframe *tf)
      tf->trapno == T_IRQ0+IRQ_TIMER) {
         acquire(&tickslock);
 	      myproc()->schedticks++;
-       if (ticks - myproc()->starttick <= myproc()->timeslice + myproc()->compticks) {
+       if (ticks - myproc()->starttick <= myproc()->timeslice + myproc()->sleepdeadline) {
+         if (ticks - myproc()->starttick > myproc()->timeslice) {
+           myproc()->compticks++;
+         }
          release(&tickslock);
        } else {
           release(&tickslock);
-		      myproc()->compticks = 0;
           myproc()->switches++;
 		      yield();
        }
