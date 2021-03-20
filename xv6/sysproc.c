@@ -54,15 +54,22 @@ int sys_sbrk(void)
 int sys_sleep(void)
 {
 	int n;
-	struct proc *p = myproc();
+	uint ticks0;
 
 	if (argint(0, &n) < 0)
 		return -1;
 	acquire(&tickslock);
-
-	p->sleepdeadline = n;
+	ticks0 = ticks;
+	myproc()->sleepdeadline = n + ticks0;
+	myproc()->newsleepticks = n;
+	myproc()->ticks = 0;
+	myproc()->sleepticks += n;
+	
+	if(myproc()->killed) {
+		release(&tickslock);
+		return -1;
+	}
 	sleep(&ticks, &tickslock);
-
 	release(&tickslock);
 	return 0;
 }
