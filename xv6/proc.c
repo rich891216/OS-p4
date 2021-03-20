@@ -246,6 +246,49 @@ int growproc(int n)
 int fork(void)
 {
 	return fork2(getslice(myproc()->pid));
+
+	// int i, pid;
+	// struct proc *np;
+	// struct proc *curproc = myproc();
+
+	// // Allocate process.
+	// if ((np = allocproc()) == 0)
+	// {
+	// 	return -1;
+	// }
+
+	// // Copy process state from proc.
+	// if ((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0)
+	// {
+	// 	kfree(np->kstack);
+	// 	np->kstack = 0;
+	// 	np->state = UNUSED;
+	// 	return -1;
+	// }
+	// np->sz = curproc->sz;
+	// np->parent = curproc;
+	// *np->tf = *curproc->tf;
+	// np->timeslice = curproc->timeslice;
+
+	// // Clear %eax so that fork returns 0 in the child.
+	// np->tf->eax = 0;
+
+	// for (i = 0; i < NOFILE; i++)
+	// 	if (curproc->ofile[i])
+	// 		np->ofile[i] = filedup(curproc->ofile[i]);
+	// np->cwd = idup(curproc->cwd);
+
+	// safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+
+	// pid = np->pid;
+
+	// acquire(&ptable.lock);
+
+	// np->state = RUNNABLE;
+
+	// release(&ptable.lock);
+
+	// return pid;
 }
 
 // Exit the current process.  Does not return.
@@ -406,12 +449,12 @@ void scheduler(void)
 			{
 				p->switches++;
 				p->cursleepticks = 0;
-				if (p->state == SLEEPING) {
-					pop();
-					continue;
+				pop();
+
+				if (p->state != SLEEPING) {
+					push(p);
+					p->curticks = 0;
 				}
-				p->curticks = 0;
-				push(p);
 				continue;
 			}
 		}
@@ -533,15 +576,15 @@ wakeup1(void *chan)
 				if (ticks >= p->sleepdeadline)
 				{
 					p->state = RUNNABLE;
-					p->curticks = 0;
 					push(p);
+					p->curticks = 0;
 				}
 			}
 			else
 			{
 				p->state = RUNNABLE;
-				p->curticks = 0;
 				push(p);
+				p->curticks = 0;
 			}
 		}
 	}
@@ -700,7 +743,7 @@ int fork2(int slice)
 	acquire(&ptable.lock);
 
 	np->state = RUNNABLE;
-	setslice(np->pid, slice);
+	np->timeslice = slice;
 	push(np);
 
 	release(&ptable.lock);

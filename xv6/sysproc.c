@@ -8,79 +8,73 @@
 #include "proc.h"
 #include "pstat.h"
 
-int
-sys_fork(void)
+int sys_fork(void)
 {
-  return fork();
+	return fork();
 }
 
-int
-sys_exit(void)
+int sys_exit(void)
 {
-  exit();
-  return 0;  // not reached
+	exit();
+	return 0; // not reached
 }
 
-int
-sys_wait(void)
+int sys_wait(void)
 {
-  return wait();
+	return wait();
 }
 
-int
-sys_kill(void)
+int sys_kill(void)
 {
-  int pid;
+	int pid;
 
-  if(argint(0, &pid) < 0)
-    return -1;
-  return kill(pid);
+	if (argint(0, &pid) < 0)
+		return -1;
+	return kill(pid);
 }
 
-int
-sys_getpid(void)
+int sys_getpid(void)
 {
-  return myproc()->pid;
+	return myproc()->pid;
 }
 
-int
-sys_sbrk(void)
+int sys_sbrk(void)
 {
-  int addr;
-  int n;
+	int addr;
+	int n;
 
-  if(argint(0, &n) < 0)
-    return -1;
-  addr = myproc()->sz;
-  if(growproc(n) < 0)
-    return -1;
-  return addr;
+	if (argint(0, &n) < 0)
+		return -1;
+	addr = myproc()->sz;
+	if (growproc(n) < 0)
+		return -1;
+	return addr;
 }
 
-int
-sys_sleep(void)
+int sys_sleep(void)
 {
-  int n;  // ticks to sleep
-  uint ticks0;
+	int n; // ticks to sleep
+	uint ticks0;
 
-  if(argint(0, &n) < 0)
-    return -1;
-  
-  acquire(&tickslock);
-  ticks0 = ticks;
-  myproc()->sleepticks += + n;
-  myproc()->sleepdeadline = n + ticks0;
-  myproc()->cursleepticks = n;
-  myproc()->curticks = 0;
+	if (argint(0, &n) < 0)
+		return -1;
 
-  if(myproc()->killed){
-    release(&tickslock);
-    return -1;
-  }
-  sleep(&ticks, &tickslock);
+	acquire(&tickslock);
+	ticks0 = ticks;
+	myproc()->sleepticks += +n;
+	myproc()->sleepdeadline = n + ticks0;
+	myproc()->cursleepticks = n;
+	myproc()->curticks = 0;
 
-  release(&tickslock);
-  return 0;
+	if (myproc()->killed)
+	{
+		release(&tickslock);
+		return -1;
+	}
+	sleep(&ticks, &tickslock);
+
+	release(&tickslock);
+	return 0;
 }
 
 // return how many clock tick interrupts have occurred
