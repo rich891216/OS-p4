@@ -184,8 +184,8 @@ found:
 	p->sleepticks = 0;
 	p->switches = 0;
 	p->sleepdeadline = 0;
-	p->ticks = 0;
-	p->newsleepticks = 0;
+
+	addToTail(p);
 
 	release(&ptable.lock);
 
@@ -247,7 +247,6 @@ void userinit(void)
 	acquire(&ptable.lock);
 
 	p->state = RUNNABLE;
-	addToTail(p);
 
 	release(&ptable.lock);
 }
@@ -280,49 +279,48 @@ int growproc(int n)
 // Caller must set state of returned proc to RUNNABLE.
 int fork(void)
 {
-	return fork2(getslice(myproc()->pid));
-	// int i, pid;
-	// struct proc *np;
-	// struct proc *curproc = myproc();
+	int i, pid;
+	struct proc *np;
+	struct proc *curproc = myproc();
 
 	// Allocate process.
-	// if ((np = allocproc()) == 0)
-	// {
-	// 	return -1;
-	// }
+	if ((np = allocproc()) == 0)
+	{
+		return -1;
+	}
 
 	// Copy process state from proc.
-	// if ((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0)
-	// {
-	// 	kfree(np->kstack);
-	// 	np->kstack = 0;
-	//	np->state = UNUSED;
-	//	return -1;
-	//}
-	// np->sz = curproc->sz;
-	// np->parent = curproc;
-	// *np->tf = *curproc->tf;
-	// np->timeslice = curproc->timeslice;
+	if ((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0)
+	{
+		kfree(np->kstack);
+		np->kstack = 0;
+		np->state = UNUSED;
+		return -1;
+	}
+	np->sz = curproc->sz;
+	np->parent = curproc;
+	*np->tf = *curproc->tf;
+	np->timeslice = curproc->timeslice;
 
 	// Clear %eax so that fork returns 0 in the child.
-	// np->tf->eax = 0;
+	np->tf->eax = 0;
 
-	// for (i = 0; i < NOFILE; i++)
-	// 	if (curproc->ofile[i])
-	//		np->ofile[i] = filedup(curproc->ofile[i]);
-	// np->cwd = idup(curproc->cwd);
+	for (i = 0; i < NOFILE; i++)
+		if (curproc->ofile[i])
+			np->ofile[i] = filedup(curproc->ofile[i]);
+	np->cwd = idup(curproc->cwd);
 
-	// safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+	safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
-	// pid = np->pid;
+	pid = np->pid;
 
-	// acquire(&ptable.lock);
+	acquire(&ptable.lock);
 
-	// np->state = RUNNABLE;
- 
-	// release(&ptable.lock);
+	np->state = RUNNABLE;
 
-	// return pid;
+	release(&ptable.lock);
+
+	return pid;
 }
 
 // Exit the current process.  Does not return.
@@ -370,9 +368,9 @@ void exit(void)
 
 	// Jump into the scheduler, never to return.
 	curproc->state = ZOMBIE;
+	deleteFromList(curproc);
 	sched();
 	panic("zombie exit");
-	deleteFromList(curproc);
 }
 
 // Wait for a child process to exit and return its pid.
@@ -442,46 +440,27 @@ void scheduler(void)
 		sti();
 
 		// Loop over process table looking for process to run.
+		p = head;
 		acquire(&ptable.lock);
 
-		while (1)
+		while (p != 0)
 		{
-			p = head;
-
-			if (p == 0) {
-				break;
-			}
-
 			if (p->state != RUNNABLE)
 			{
 				p = p->next;
-				deleteFromList(p);
 				continue;
 			}
+			c->proc = p;
+			switchuvm(p);
+			p->state = RUNNING;
+			acquire(&tickslock);
+			p->starttick = ticks;
+			release(&tickslock);
+			swtch(&(c->scheduler), p->context);
 
-			if (p->ticks < p->timeslice + p->sleepticks) {
-				p->ticks++;
-				p->schedticks++;
-				if (p->ticks > p->timeslice) {
-					p->compticks++;
-				}
-				c->proc = p;
-				switchuvm(p);
-				p->state = RUNNING;
-				swtch(&(c->scheduler), p->context);
-				switchkvm();
-				c->proc = 0;
-			} else {
-				p->switches++;
-				p->newsleepticks = 0;
-				deleteFromList(p);
-
-				if (p->state != SLEEPING) {
-					addToTail(p);
-					p->ticks = 0;
-				}
-				continue;
-			}
+			switchkvm();
+			c->proc = 0;
+			p = p->next;
 		} // working, add keeping track of ticks
 		release(&ptable.lock);
 	}
@@ -717,7 +696,6 @@ int setslice(int pid, int slice)
 int getslice(int pid)
 {
 	struct proc *p;
-	acquire(&ptable.lock);
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 	{
 		if (p->state == UNUSED)
@@ -726,7 +704,6 @@ int getslice(int pid)
 		}
 		if (p->pid == pid)
 		{
-			release(&ptable.lock);
 			return p->timeslice;
 		}
 	}
@@ -735,11 +712,6 @@ int getslice(int pid)
 
 int fork2(int slice)
 {
-	if (slice < 1)
-	{
-		return -1;
-	}
-	
 	int i, pid;
 	struct proc *np;
 	struct proc *curproc = myproc();
@@ -762,6 +734,7 @@ int fork2(int slice)
 	np->sz = curproc->sz;
 	np->parent = curproc;
 	*np->tf = *curproc->tf;
+	setslice(np->pid, slice);
 
 	// Clear %eax so that fork returns 0 in the child.
 	np->tf->eax = 0;
@@ -778,8 +751,6 @@ int fork2(int slice)
 	acquire(&ptable.lock);
 
 	np->state = RUNNABLE;
-	setslice(np->pid, slice);
-	addToTail(np);
 
 	release(&ptable.lock);
 
