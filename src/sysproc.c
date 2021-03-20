@@ -58,9 +58,9 @@ int sys_sleep(void)
 
 	if (argint(0, &n) < 0)
 		return -1;
-	acquire(&tickslock);
-
+		
 	p->sleepdeadline = n;
+	acquire(&tickslock);
 	sleep(&ticks, &tickslock);
 
 	release(&tickslock);

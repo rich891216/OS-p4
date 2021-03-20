@@ -447,20 +447,26 @@ void scheduler(void)
 		{
 			if (p->state != RUNNABLE)
 			{
+				if (p->state == SLEEPING && ticks - p->starttick <= p->sleepdeadline) {
+					p->sleepticks++;
+					p->compticks++;
+				}
 				p = p->next;
 				continue;
-			}
-			c->proc = p;
-			switchuvm(p);
-			p->state = RUNNING;
-			acquire(&tickslock);
-			p->starttick = ticks;
-			release(&tickslock);
-			swtch(&(c->scheduler), p->context);
+			} else {
+			
+				c->proc = p;
+				switchuvm(p);
+				p->state = RUNNING;
+				acquire(&tickslock);
+				p->starttick = ticks;
+				release(&tickslock);
+				swtch(&(c->scheduler), p->context);
 
-			switchkvm();
-			c->proc = 0;
-			p = p->next;
+				switchkvm();
+				c->proc = 0;
+				p = p->next;
+			}
 		} // working, add keeping track of ticks
 		release(&ptable.lock);
 	}
