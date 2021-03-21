@@ -12,5 +12,4 @@ struct pstat {
   int sleepticks[64]; // number of ticks during which this process was blocked
   int switches[64];  // total num times this process has been scheduled
 };
-
 #endif

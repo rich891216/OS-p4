@@ -1,36 +1,14 @@
-#include "types.h"
 #include "user.h"
-#include "syscall.h"
-#include <stddef.h>
 #include "pstat.h"
-#include "param.h"
 
-// static int schedtestFork(int slice, char *sleepT) {
-// 	int pid = fork2(slice);
-// 	int child = -1;
+int main(int argc, char **argv) {
+    // takes exactly 5 arguments
+    if(argc != 6){
+        printf(2, "We need exactly 6 arguments.\n");
+        exit();
+    }
 
-// 	if (pid != -1) {
-// 		if (pid == 0) {
-// 			child = getpid();
-// 			char *args[] = {"loop", sleepT};
-// 			exec(args[0], args);
-
-// 			printf(2, "exec failed\n");
-// 			exit();
-// 		} else {
-// 			wait();
-// 		}
-// 	} else {
-// 		printf(2, "fork failed\n");
-// 	}
-// 	return child;
-// }
-
-int main(int argc, char *argv[]) {
-    if (argc != 6) {
-		printf(2, "Usage: schedtest sliceA sleepA sliceB sleepB sleepParent\n");
-		exit();
-	}
+	// set values from command line
     int sliceA = atoi(argv[1]);
     char *sleepA = argv[2];
     int sliceB = atoi(argv[3]);
@@ -38,91 +16,39 @@ int main(int argc, char *argv[]) {
     int sleepParent = atoi(argv[5]);
 	struct pstat ps;
 
-	// int childA = schedtestFork(sliceA, sleepA);
-	// int childB = schedtestFork(sliceB, sleepB);
+	// comptick values for A and B
+	int compticksA = 0;
+	int compticksB = 0;
 
-	int childA = 0;
-	int childB = 0;
+	int childA = fork2(sliceA);  // fork child
+	int childB = fork2(sliceB);
 
-	if ((childA = fork2(sliceA))) {
-		if ((childB = fork2(sliceB))) {
-			sleep(sleepParent);
-			int compticksA = 0;
-			int compticksB = 0;
-			if (getpinfo(&ps) == 0) {
-				for (int i = 0; i < NPROC; i++) {
-					if (childA == ps.pid[i]) {
-						printf(1, "childA\n");
-						compticksA = ps.compticks[i];
-					}
-					else if (childB == ps.pid[i]) {
-						printf(1, "childB\n");
-						compticksB = ps.compticks[i];
-					}
-				}
-				printf(1, "%d %d\n", compticksA, compticksB);
-			}
-			wait();
-			wait();
-			exit();
-		} else {
-			char *args[] = {"loop", sleepB, 0};
-			exec(args[0], args);
-			exit();
-		}
-	} else {
+	if (childA == 0)
+	{ // check if the process is a child
 		char *args[] = {"loop", sleepA, 0};
-		exec(args[0], args);
-		exit();
+        exec("loop", args);
 	}
-	// if ((childA = fork2(sliceA)) == 0) {
-	// 	char *args[] = {"loop", sleepA, 0};
-	// 	exec(args[0], args);
-	// 	exit();
-	// } else if ((childB = fork2(sliceB)) == 0) {
-	// 	char *args[] = {"loop", sleepB, 0};
-	// 	exec(args[0], args);
-	// 	exit();
-	// } else {
-	// 	wait();
-	// 	sleep(sleepParent);
-	// 	int compticksA = 0;
-	// 	int compticksB = 0;
-	// 	if (getpinfo(&ps) == 0) {
-	// 		for(int i = 0; i < NPROC; i++) {
-	// 			if (childA == ps.pid[i]) {
-	// 				printf(1, "childA\n");
-	// 				compticksA = ps.compticks[i];
-	// 			} else if (childB == ps.pid[i]) {
-	// 				printf(1, "childB\n");
-	// 				compticksB = ps.compticks[i];
-	// 			}
-	// 		}
-	// 		printf(1, "%d %d\n", compticksA, compticksB);
-	// 		// wait();
-	// 		// wait();
-	// 		exit();
-	// 	}
-	// }
 
-	// sleep(sleepParent);
+    if (childB == 0){  // check if the process is a child
+        char *args[] = {"loop", sleepB, 0};
+        exec("loop", args);
+    }
+    sleep(sleepParent); // sleep the parent
 
-	// int compticksA = 0;
-	// int compticksB = 0;
-
-	// if (getpinfo(&ps) == 0) {
-	// 	for (int i = 0; i < NPROC; i++) {
-	// 		if (childA == ps.pid[i]) {
-	// 			compticksA = ps.compticks[i];
-	// 		}
-
-	// 		if (childB == ps.compticks[i]) {
-	// 			compticksB = ps.compticks[i];
-	// 		}
-	// 	}
-	// 	printf(1, "%d %d\n", compticksA, compticksB);
-	// } else {
-	// 	printf(2, "Error: Could not access ptable correctly.\n");
-	// }
-	exit();
+    if (getpinfo(&ps) == 0) { // pstat retrieval success
+		// iterate through the pstat proc to find compticks for children
+        for (int i = 0; i < NPROC; i++) {
+            if (childA == ps.pid[i]) {
+                compticksA = ps.compticks[i];
+            }
+            if (childB == ps.pid[i]) {
+                compticksB = ps.compticks[i];
+            }
+        }
+        printf(1, "%d %d\n", compticksA, compticksB); 
+    }
+	// wait for two loops before exiting
+    wait();
+    wait();
+    exit(); 
 }

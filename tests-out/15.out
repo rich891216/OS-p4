@@ -1,1 +1,2 @@
-XV6_SCHEDULER	 compticks used 64 should be 0 at this time
+XV6_SCHEDULER	 inner child 1 workload DONE
+XV6_SCHEDULER	 outer child 0 workload DONE

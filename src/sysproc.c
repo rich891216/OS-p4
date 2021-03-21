@@ -53,14 +53,25 @@ int sys_sbrk(void)
 
 int sys_sleep(void)
 {
-	int n;
-	struct proc *p = myproc();
+	int n; // ticks to sleep
+	uint ticks0;
 
 	if (argint(0, &n) < 0)
 		return -1;
-		
-	p->sleepdeadline = n;
+
 	acquire(&tickslock);
+	ticks0 = ticks;
+
+	// set some fields in myproc
+	myproc()->sleepdeadline = n + ticks0;
+	myproc()->activesleepticks = n;
+	myproc()->activeticks = 0;
+
+	if (myproc()->killed)
+	{
+		release(&tickslock);
+		return -1;
+	}
 	sleep(&ticks, &tickslock);
 
 	release(&tickslock);
@@ -79,7 +90,9 @@ int sys_uptime(void)
 	return xticks;
 }
 
-// sets time slice for given proc
+/*
+ * Sets slice for desired process
+ */
 int sys_setslice(void)
 {
 	int pid;
@@ -94,7 +107,9 @@ int sys_setslice(void)
 	}
 }
 
-// gets time slice given pid
+/*
+ * Retrieves pid of desired process
+ */
 int sys_getslice(void)
 {
 	int pid;
@@ -108,11 +123,13 @@ int sys_getslice(void)
 	}
 }
 
-//fork2, same as fork except can set time slice
+/*
+ * Same as fork but with timeslice input
+ */
 int sys_fork2(void)
 {
 	int slice;
-	if (argint(0, &slice) < 0)
+	if (argint(0, &slice) < 0) // slice is invalid
 	{
 		return -1;
 	}
@@ -122,11 +139,13 @@ int sys_fork2(void)
 	}
 }
 
-//gets pstat's information
+/*
+ * Retrieves info from pstat
+ */
 int sys_getpinfo(void)
 {
 	struct pstat *ps;
-	if (argptr(0, (void *)&ps, sizeof(*ps)) < 0) //ps is invalid
+	if (argptr(0, (void *)&ps, sizeof(*ps)) < 0) // ps is invalid
 	{
 		return -1;
 	}

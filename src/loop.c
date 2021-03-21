@@ -15,12 +15,12 @@ int main(int argc, char *argv[]) {
     int sleepticks = atoi(argv[1]);
     if (sleepticks <= 0) {
         // argv[1] can't be coverted
-        printf(2, "sleepticks is negative\n");
+        // printf(2, "sleepticks is negative\n");
         exit();
     }
-    printf(1, "sleeping for %d ticks\n", sleepticks);
+    // printf(1, "sleeping for %d ticks\n", sleepticks);
     sleep(sleepticks);
-    printf(1, "slept for %d ticks\n", sleepticks);
+    // printf(1, "slept for %d ticks\n", sleepticks);
 	
     int i = 0;
     int j = 0;
@@ -28,6 +28,6 @@ int main(int argc, char *argv[]) {
         j += i * j + 1;
         i++;
     }
-    printf(1, "loop done\n");
+    // printf(1, "loop done\n");
     exit();
 }
